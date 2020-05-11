@@ -16,7 +16,6 @@ def set_data():
     return make_response(jsonify(response), response["status"])
 
 
-
 @UsersController.route("/delete", methods=['POST'])
 def delete_data():
     data = request.get_json()

@@ -6,7 +6,6 @@ from models import faliureQueue
 
 class cacheService():
 
-
     __instance = None
 
     @staticmethod 
@@ -35,29 +34,45 @@ class cacheService():
     def fetchData(self , key):
         return self.cacheStore.get(key)
 
-
-    def setData(self, key , value):
-        self.cacheStore.get(key)
-        saveDataInOtherCache(key, value)
-
+    def setData(self, key , value, callOtherCache):
+        response = self.cacheStore.get(key)
+        if response == True and callOtherCache == True:
+            response = saveDataInOtherCache(key, value)
+        return response
 
     def saveDataInOtherCache(key, value):
         try:
             params = {"key":key , "value":value}
             for server in serverList:
-                resp = requests.post(server["setUrl"], params)
-
-        Exception:
-            # failed operation can be pushed to queue and asked to reregister
-            
-
-
-    def removeDataInOtheCase():
-        try:
-            params = {"key":key , "value":value}
-            for server in serverList:
                 operationFailed = False
                 resp = requests.post(server["setUrl"], params)
+                if not resp:
+                    operationFailed = True
+                else:
+                    if resp["status"] != 200:
+                       operationFailed = True
+                if operationFailed == True:
+                    qEntry = faliureQueue(operation.SET, server["name"], params)
+                    self.faliureQueue.push(qEntry)
+            if operationFailed == True:
+                return False
+        except:
+            return False
+        return True
+
+    
+    def deleteData(self, key , callOtherCache):
+        response = self.cacheStore.delete(key)
+        if response == True and callOtherCache == True:
+            response = removeDataInOtheCase(key)
+        return response
+
+    def removeDataInOtheCase(key):
+        try:
+            params = {"key":key}
+            for server in serverList:
+                operationFailed = False
+                resp = requests.post(server["deleteUrl"], params)
                 if not resp:
                     # operation failed
                     operationFailed = True
@@ -65,15 +80,12 @@ class cacheService():
                     if resp["status"] != 200:
                        operationFailed = True
                 if operationFailed == True:
-                    
-                    self.faliureQueue.push()
-        Exception:
-            # failed operation can be pushed to queue and asked to reregister
+                    qEntry = faliureQueue(operation.DELETE, server["name"], params)
+                    self.faliureQueue.push(qEntry)
+            if operationFailed == True:
+                return False
+        except:
+            return False
+        return True
 
-    
-
-    def pushOperation(self, op):
-        operation = operations.GET
-        data = key
-        op = queue(operation, data)
 
