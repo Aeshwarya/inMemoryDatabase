@@ -18,6 +18,8 @@ env/bin/pip install flask
 env/bin/pip install flask-sqlalchemy
 env/bin/pip install flask-wtf
 
+
+"
 echo "Creating Models"
 mkdir app/models
 touch app/models/__init__.py

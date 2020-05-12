@@ -1,5 +1,7 @@
-from .usersController import UsersController
+from .cacheController import CacheController
+from ..services.cacheService import cacheService
 
-def init_app(app):
-    app.register_blueprint(UsersController)
+def init_app(app , config):
+    cacheService.getInstance(config)
+    app.register_blueprint(CacheController)
 

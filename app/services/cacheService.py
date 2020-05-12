@@ -1,32 +1,45 @@
-from store import cacheStore
-import cacheConfig
-from models import operations
-from models import faliureQueue
+from flask import Flask
+import requests
+import json
+from .baseService import BaseService
+from ..store.cacheStore import LRUCache
+from ..models.operations import operations
+from ..models.faliureQueue import faliureQueue
 
 
-class cacheService():
+class cacheService:
 
     __instance = None
+    SET_URL = "/set_internal"
+    DELET_URL = "/delete_internal"
 
     @staticmethod 
-    def getInstance():
-   
+    def getInstance(config):
       if cacheService.__instance == None:
-         cacheService()
+         cacheService(config)
       return cacheService.__instance
 
-    def __init__(self):
-    
+    @staticmethod
+    def fetchInstance():
+        return cacheService.__instance
+
+    def __init__(self, config):
       if cacheService.__instance != None:
          raise Exception("This class is a singleton!")
       else:
-         self.cacheStore = cacheStore
-         servers = cacheConfig.servers
-         for server in range(0 , cacheConfig.NUMBER_OF_NODES):
-             if server["name"] != self.current.server:
-                 setUrl = "http://"+server["host"]+":"+server["port"]+"/set"
-                 deleteUrl = "http://"+server["host"]+":"+server["port"]+"/delete"
-                 serverList[server["name"]] = {"setUrl":setUrl, "deleteUrl":deleteUrl}
+         self.cacheStore = LRUCache()
+         servers = config["SERVERS"]
+         self.serverList = {}
+         numer_of_node = config["NUMBER_OF_NODES"]
+         for server in servers:
+             if server["name"] != config["CURRENT_SERVER"]:
+                 setUrl = "http://"+server["HOST"]+":"+server["PORT"]+self.SET_URL
+                 deleteUrl = "http://"+server["HOST"]+":"+server["PORT"]+self.DELET_URL
+                 self.serverList[server["name"]] = {"setUrl": setUrl, "deleteUrl": deleteUrl}
+                 numer_of_node = numer_of_node - 1
+                 if numer_of_node == 0:
+                     break
+         print(self.serverList)
          self.faliureQueue = []
          cacheService.__instance = self
 
@@ -35,57 +48,78 @@ class cacheService():
         return self.cacheStore.get(key)
 
     def setData(self, key , value, callOtherCache):
-        response = self.cacheStore.get(key)
-        if response == True and callOtherCache == True:
-            response = saveDataInOtherCache(key, value)
-        return response
-
-    def saveDataInOtherCache(key, value):
         try:
-            params = {"key":key , "value":value}
-            for server in serverList:
+            response = self.cacheStore.put(key, value)
+            print(response, callOtherCache)
+            if response == True and callOtherCache == True:
+                response = self.saveDataInOtherCache(key, value)
+            return response
+        except  Exception as e:
+            print("exception raised in delete data", e)
+            return False
+
+    def saveDataInOtherCache(self, key, value):
+
+        params = {"key":key,"value":value}
+        for server in self.serverList:
+            try:
                 operationFailed = False
-                resp = requests.post(server["setUrl"], params)
-                if not resp:
+                print("calling another cache", self.serverList[server]["setUrl"], key, value)
+                resp = requests.post(self.serverList[server]["setUrl"], json=params)
+                print("response:", resp.status_code)
+
+                if not resp.status_code:
                     operationFailed = True
                 else:
-                    if resp["status"] != 200:
+                    if resp.status_code != 200:
                        operationFailed = True
+
                 if operationFailed == True:
-                    qEntry = faliureQueue(operation.SET, server["name"], params)
+                    qEntry = faliureQueue(operations.SET, server["name"], params)
                     self.faliureQueue.push(qEntry)
-            if operationFailed == True:
-                return False
-        except:
+
+            except  Exception as e:
+                print("exception raised in setting data to cache server", e)
+                operationFailed = False
+
+        if operationFailed == True:
             return False
         return True
 
     
     def deleteData(self, key , callOtherCache):
         response = self.cacheStore.delete(key)
-        if response == True and callOtherCache == True:
-            response = removeDataInOtheCase(key)
+        print("on delete", response, callOtherCache)
+        if callOtherCache == True:
+            response = self.removeDataInOtheCase(key)
         return response
 
-    def removeDataInOtheCase(key):
-        try:
-            params = {"key":key}
-            for server in serverList:
+
+    def removeDataInOtheCase(self, key):
+
+        params = {"key":key}
+        for server in self.serverList:
+            try:
                 operationFailed = False
-                resp = requests.post(server["deleteUrl"], params)
-                if not resp:
+                resp = requests.post(self.serverList[server]["deleteUrl"], json=params)
+                print("response from other cache", resp.status_code)
+                if not resp.status_code:
                     # operation failed
                     operationFailed = True
                 else:
-                    if resp["status"] != 200:
+                    if resp.status_code != 200:
                        operationFailed = True
                 if operationFailed == True:
-                    qEntry = faliureQueue(operation.DELETE, server["name"], params)
+                    qEntry = faliureQueue(operations.DELETE, server["name"], params)
                     self.faliureQueue.push(qEntry)
-            if operationFailed == True:
-                return False
-        except:
+
+            except  Exception as e:
+                print("exception raised in delete data", e)
+                operationFailed = False
+
+        if operationFailed == True:
             return False
         return True
 
-
+    def fetchall(self):
+        return self.cacheStore.fetchall()

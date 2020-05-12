@@ -1,6 +1,7 @@
 import config
 
 class Node:
+
     def __init__(self, key, val):
         self.key = key
         self.val = val
@@ -13,13 +14,12 @@ class LRUCache:
 
     @staticmethod 
     def getInstance():
-   
       if LRUCache.__instance == None:
-         LRUCache()
+          LRUCache()
       return LRUCache.__instance
 
     def __init__(self):
-    
+      print("here2")
       if LRUCache.__instance != None:
          raise Exception("This class is a singleton!")
       else:
@@ -27,6 +27,7 @@ class LRUCache:
             print('LRUCache capacity must be > 0')
             return None
 
+         print("here")
          self.capacity = config.CACHE_SIZE
          self.size = 0 
          self.node_map = {}
@@ -46,6 +47,7 @@ class LRUCache:
         self.head = None
         self.tail = None
 
+
     def use_node(self, node):
         if node is self.head:
             return
@@ -62,6 +64,7 @@ class LRUCache:
 
     def get(self, key):
         if key in self.node_map:
+            print("here",self.node_map[key] ,self.node_map[key].val)
             self.use_node(self.node_map[key])
             return self.node_map[key].val
         else:
@@ -95,33 +98,55 @@ class LRUCache:
                 del self.node_map[k]
 
             self.use_node(node)
-
-    def delete(self, key):
-        if key not in self.node_map:
-            return False
-        else:
-            node = self.node_map[key]
-            if node == self.head:
-                node.next.prev = None
-                node.next = node.head
-                node.next = None
-            elif node == self.tail:
-                self.tail = self.tail.prev
-                self.tail.next = None
-            else:
-                node.prev.next = node.next
-                node.next.prev = node.prev
-                node.next = None
-                node.prev = None
-
-            del self.node_map[key]
-            self.size -= 1
-
+        print(self.node_map)
+        print(self.head.val)
+        print(self.tail.val)
         return True
 
+    def delete(self, key):
+        print(key, self.head.val , self.tail.val)
+        try:
+            if key not in self.node_map:
+                print("key not in key map")
+                return False
+            else:
+                print("here")
+                node = self.node_map[key]
+                print(node)
+                if node == self.head:
+                    print("here1")
+                    if node.next == None:
+                        print("here2")
+                        self.head = None
+                        self.tail = None
+                    else:
+                        print("here3")
+                        node.next.prev = None
+                        self.head = node.next
+                        node.next = None
+                elif node == self.tail:
+                    self.tail = self.tail.prev
+                    self.tail.next = None
+                else:
+                    node.prev.next = node.next
+                    node.next.prev = node.prev
+                    node.next = None
+                    node.prev = None
 
+                del self.node_map[key]
+                self.size -= 1
 
+            print(self.node_map)
+            return True
+        except  Exception as e:
+            print("exception raised in delete data", e)
 
+    def fetchall(self):
+        all_data = {}
+        for i in self.node_map:
+            all_data[i] = self.node_map[i].val
+
+        return all_data
 
 
 

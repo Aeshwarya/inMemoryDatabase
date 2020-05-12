@@ -4,4 +4,6 @@ SERVERS = [
     {"name":"server2", "HOST":"0.0.0.0", "PORT":"2223"},
     {"name":"server3", "HOST":"0.0.0.0", "PORT":"2224"}
 ]
+CURRENT_SERVER = "server1"
+
 
