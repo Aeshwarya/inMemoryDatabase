@@ -5,13 +5,10 @@ server_config = {}
 server_config["NUMBER_OF_NODES"] = cacheConfig.NUMBER_OF_NODES
 server_config["SERVERS"] = cacheConfig.SERVERS
 server_config["CURRENT_SERVER"] = "server1"
-
-
 base_url = "http://0.0.0.0:"
 server_set_url = "/set"
 server_del_url = "/expire"
 server_get_url = "/get"
-
 while(True):
     port= input("Port:")
     operation = input("Operation: ")

@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/mnt/c/Users/Abhishek/Documents/Abhishek Kumar/Aeshwarya/codebase/inMemoryDatabase/inMemoryDatabase/env/bin/python3" "$0" "$@"
+'''exec' "./env/bin/python3" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re
