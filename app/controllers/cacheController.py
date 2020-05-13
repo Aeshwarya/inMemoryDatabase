@@ -11,9 +11,12 @@ def set_data_intenal():
         data = request.get_json()
         print("setting data")
         print(data)
+        
         if "key" not in data or data["key"] == None  or "value" not in data or data["value"] == None:
-            return {"Error": "Invalid key value pair", "status":"404"}
+            return make_response(jsonify({"error": "Invalid key value pair", "status":400}), 400)
+    
         response = cacheService.fetchInstance().setData(data["key"], data["value"], False)
+        
         if response == True:
             resp["message"] = "cache updated"
             resp["status"] = 200
@@ -23,6 +26,7 @@ def set_data_intenal():
     except:
         resp["error"] = "some error occured"
         resp["status"] = 400
+    
     return make_response(jsonify(resp), resp["status"])
 
 @CacheController.route("/set", methods=['POST'])

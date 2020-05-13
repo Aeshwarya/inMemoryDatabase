@@ -6,17 +6,7 @@ import sys
 
 def start(port, server_name):
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-    numer_of_server = cacheConfig.NUMBER_OF_NODES
-    count = 1
-    servers = cacheConfig.SERVERS
-    #port = int(input())
-    #name = input()
-
-    name = server_name
-
-    print(port)
-    print(name)
-    application=create_app(os.path.join(BASE_DIR, 'config.py'), name)
+    application=create_app(os.path.join(BASE_DIR, 'config.py'), server_name)
     application.run(host="127.0.0.1", port=port, debug=True)
 
 if __name__ == "__main__":

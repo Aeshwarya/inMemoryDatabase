@@ -12,6 +12,7 @@ class cacheService:
     __instance = None
     SET_URL = "/set_internal"
     DELET_URL = "/delete_internal"
+    FETCHALL_URL = "/fetchall"
 
     @staticmethod 
     def getInstance(config):
@@ -35,13 +36,35 @@ class cacheService:
              if server["name"] != config["CURRENT_SERVER"]:
                  setUrl = "http://"+server["HOST"]+":"+server["PORT"]+self.SET_URL
                  deleteUrl = "http://"+server["HOST"]+":"+server["PORT"]+self.DELET_URL
-                 self.serverList[server["name"]] = {"setUrl": setUrl, "deleteUrl": deleteUrl}
+                 fetchAllUrl = "http://"+server["HOST"]+":"+server["PORT"]+ self.FETCHALL_URL
+                 self.serverList[server["name"]] = {"setUrl": setUrl, "deleteUrl": deleteUrl, "fetchAllUrl": fetchAllUrl}
                  numer_of_node = numer_of_node - 1
                  if numer_of_node == 0:
                      break
+        
+         self.setupInitialData(config)
+
          print(self.serverList)
          self.faliureQueue = []
          cacheService.__instance = self
+
+    def setupInitialData(self, config):
+         for server in self.serverList:
+            if server != config["CURRENT_SERVER"]:
+                try:
+                    resp = requests.post(self.serverList[server]["fetchAllUrl"])
+                    if resp.status_code and resp.status_code== 200:
+                        json_data = resp.json()
+                        found = False
+                        for key in json_data:
+                            self.setData(key, json_data[key], False)
+                            found = True
+                    
+                        if found:
+                            return
+                except Exception:
+                    pass
+
 
 
     def fetchData(self , key):
